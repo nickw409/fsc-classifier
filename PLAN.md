@@ -198,7 +198,7 @@ All of this happens in the working directory without initializing git. The timer
 - [ ] Wire `POST /api/classify` → scrape → classify → shaped response
 - [ ] Frontend: form with name + URL, POST, render code cards with evidence
 - [ ] **Smoke:** Loos & Co URL — scrape returns >1000 chars of product content, classification hits cable/wire rope/aircraft-adjacent codes with strong evidence quotes
-- [ ] **Verify:** scrape output length is within 2x of `curl -A <browser-ua>` output length on the same URL — if wildly different, the selectors are stripping too much or too little
+- [ ] **Verify:** `npm run scrape:check -- <url>` passes (exit 0). The script fetches with the scraper's UA and asserts: HTTP 200, raw HTML ≥ 5 KB (rules out Cloudflare/bot-challenge pages), cleaned text ≥ 500 chars, extracted/raw ratio 0.2–50% (rules out selectors stripping everything or leaking scripts). Prints a text preview so you can eyeball that it's real product prose, not nav boilerplate. `curl` is unreliable here — many target sites bot-block curl but allow undici `fetch`.
 - [ ] Commit: `feat: end-to-end url classification`
 
 ### Phase 2 — PDF upload (0:45–1:15)
