@@ -9,7 +9,8 @@ import { loadFscCodes } from "./fsc.js";
 import { scrape } from "./scrape.js";
 import { extractPdf } from "./pdf.js";
 import { classify } from "./classify.js";
-import type { ClassifyResponse, SourceStatus } from "./types.js";
+import { deriveUrlFromEmail, isConsumerEmail } from "./email.js";
+import type { ClassifyResponse, EmailSourceStatus, SourceStatus } from "./types.js";
 
 const app = express();
 const upload = multer({
@@ -33,16 +34,25 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
 
     const pdfFile = req.file;
 
+    const derivedUrl = websiteUrl ? undefined : deriveUrlFromEmail(email);
+    const scrapeTarget = websiteUrl ?? derivedUrl;
+
     const [website, pdf] = await Promise.all([
-      websiteUrl ? scrape(websiteUrl) : Promise.resolve({ ok: false, chars: 0, text: "" }),
+      scrapeTarget ? scrape(scrapeTarget) : Promise.resolve({ ok: false, chars: 0, text: "" }),
       pdfFile ? extractPdf(pdfFile.buffer) : Promise.resolve({ ok: false, chars: 0, text: "" }),
     ]);
 
     const descStatus: SourceStatus = description
       ? { ok: true, chars: description.length }
       : { ok: false, chars: 0 };
-    const emailStatus = email
-      ? { ok: true, chars: email.length }
+
+    const emailStatus: EmailSourceStatus = email
+      ? {
+          ok: true,
+          chars: email.length,
+          ...(derivedUrl ? { derivedUrl } : {}),
+          ...(isConsumerEmail(email) ? { error: "consumer email provider; not used as URL signal" } : {}),
+        }
       : { ok: false, chars: 0 };
 
     const result = await classify({
@@ -50,7 +60,7 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
       websiteText: website.ok ? website.text : undefined,
       pdfText: pdf.ok ? pdf.text : undefined,
       description,
-      email,
+      email: email && !isConsumerEmail(email) ? email : undefined,
     });
 
     const body: ClassifyResponse = {

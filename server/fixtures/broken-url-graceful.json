@@ -1,0 +1,34 @@
+{
+  "companyName": "Nowhere LLC",
+  "analysis": "Nowhere LLC is described as an industrial widget manufacturer, but the inputs are too sparse and generic to determine specific products.",
+  "sources": {
+    "website": {
+      "ok": false,
+      "chars": 0,
+      "error": "fetch failed: getaddrinfo ENOTFOUND definitely-not-a-real-host-6d8e2a.invalid (ENOTFOUND)"
+    },
+    "pdf": {
+      "ok": false,
+      "chars": 0
+    },
+    "description": {
+      "ok": true,
+      "chars": 48
+    },
+    "email": {
+      "ok": false,
+      "chars": 0
+    }
+  },
+  "codes": [
+    {
+      "code": "3695",
+      "description": "Miscellaneous Specialized Industry Machinery",
+      "group_code": "36",
+      "group_name": "Special Industry Machinery",
+      "confidence": "low",
+      "reasoning": "The term 'industrial widget manufacturer' most loosely fits miscellaneous specialized industry machinery as a catch-all for unspecified industrial manufactured components.",
+      "evidence": "Industrial widget manufacturer for verification."
+    }
+  ]
+}

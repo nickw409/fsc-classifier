@@ -1,0 +1,42 @@
+{
+  "companyName": "H&R Parts Co., Inc.",
+  "analysis": "H&R Parts Co., Inc. is a Wichita, Kansas manufacturer of sheetmetal aircraft components and assemblies, performing spot welding and CNC machining/punching for the aerospace and defense industries.",
+  "sources": {
+    "website": {
+      "ok": true,
+      "chars": 2290
+    },
+    "pdf": {
+      "ok": false,
+      "chars": 0
+    },
+    "description": {
+      "ok": false,
+      "chars": 0
+    },
+    "email": {
+      "ok": false,
+      "chars": 0
+    }
+  },
+  "codes": [
+    {
+      "code": "1560",
+      "description": "Airframe Structural Components",
+      "group_code": "15",
+      "group_name": "Aircraft and Airframe Structural Components",
+      "confidence": "high",
+      "reasoning": "The company manufactures sheetmetal aircraft structural components and assemblies, which directly aligns with airframe structural components.",
+      "evidence": "Manufacturer of Sheetmetal Aircraft Components and Assemblies"
+    },
+    {
+      "code": "1680",
+      "description": "Miscellaneous Aircraft Accessories and Components",
+      "group_code": "16",
+      "group_name": "Aircraft Components and Accessories",
+      "confidence": "medium",
+      "reasoning": "The scope of sheetmetal components and assemblies for aerospace likely includes miscellaneous aircraft accessories and components beyond purely structural airframe parts.",
+      "evidence": "The scope of our Company is manufacturing of sheetmetal components and assemblies, spot welding, and CNC machining/punching for the aerospace industry."
+    }
+  ]
+}

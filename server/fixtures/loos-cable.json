@@ -1,0 +1,114 @@
+{
+  "companyName": "Loos & Co.",
+  "analysis": "Loos & Co. manufactures aircraft cable, wire rope, cable assemblies, hardware/fittings, and CNC-machined components for aerospace, defense, military, automotive, medical, and other commercial industries.",
+  "sources": {
+    "website": {
+      "ok": true,
+      "chars": 3559
+    },
+    "pdf": {
+      "ok": false,
+      "chars": 0
+    },
+    "description": {
+      "ok": false,
+      "chars": 0
+    },
+    "email": {
+      "ok": false,
+      "chars": 0
+    }
+  },
+  "codes": [
+    {
+      "code": "4010",
+      "description": "Chain and Wire Rope",
+      "group_code": "40",
+      "group_name": "Rope, Cable, Chain, and Fittings",
+      "confidence": "high",
+      "reasoning": "The company explicitly manufactures wire rope and aircraft cable in multiple alloys to commercial and military specifications.",
+      "evidence": "Wire Rope When looking for the highest quality domestic Wire Rope in stainless steel, galvanized, bright carbon steel and a variety of other alloys, we deliver."
+    },
+    {
+      "code": "4030",
+      "description": "Fitting for Rope, Cable, Chain",
+      "group_code": "40",
+      "group_name": "Rope, Cable, Chain, and Fittings",
+      "confidence": "high",
+      "reasoning": "The company manufactures fittings and accessories for wire rope and cable, directly matching this FSC category.",
+      "evidence": "Hardware & Fittings​ Loos & Co., Inc. has long been a manufacturer of high-quality wire rope fittings and accessories for a variety of industries."
+    },
+    {
+      "code": "5995",
+      "description": "Cable, Cord, Wire Assemblies; Communications Equipment",
+      "group_code": "59",
+      "group_name": "Electrical and Electronic Equipment Components",
+      "confidence": "high",
+      "reasoning": "The company manufactures cable assemblies for aerospace and defense communications and control applications.",
+      "evidence": "Cable Assemblies​ We maintain large inventories of both bare and coated cable as well as fittings to satisfy your immediate needs."
+    },
+    {
+      "code": "5340",
+      "description": "Hardware, Commercial",
+      "group_code": "53",
+      "group_name": "Hardware and Abrasives",
+      "confidence": "high",
+      "reasoning": "The company produces commercial hardware including bushings and fittings for a variety of industries.",
+      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
+    },
+    {
+      "code": "5365",
+      "description": "Bushings, Rings, Shims and Spacers",
+      "group_code": "53",
+      "group_name": "Hardware and Abrasives",
+      "confidence": "medium",
+      "reasoning": "The company specifically mentions manufacturing bushings as part of their product line, which falls under this FSC category.",
+      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
+    },
+    {
+      "code": "9505",
+      "description": "Wire, Nonelectrical",
+      "group_code": "95",
+      "group_name": "Metal Bars, Sheets, and Shapes",
+      "confidence": "high",
+      "reasoning": "The company manufactures nonelectrical wire including aircraft cable in stainless steel, galvanized carbon steel, and other alloys.",
+      "evidence": "Loos and Company manufactures and stocks aircraft cable to commercial and military specifications in stainless steel, galvanized carbon steel, and a variety of other alloys."
+    },
+    {
+      "code": "1560",
+      "description": "Airframe Structural Components",
+      "group_code": "15",
+      "group_name": "Aircraft and Airframe Structural Components",
+      "confidence": "medium",
+      "reasoning": "The company supplies aerospace and defense cables and assemblies that serve as structural components for airframes.",
+      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
+    },
+    {
+      "code": "2020",
+      "description": "Rigging and Rigging Gear",
+      "group_code": "20",
+      "group_name": "Ship and Marine Equipment",
+      "confidence": "medium",
+      "reasoning": "The company manufactures wire rope and rigging gear applicable to marine and ship applications.",
+      "evidence": "Wire Rope When looking for the highest quality domestic Wire Rope in stainless steel, galvanized, bright carbon steel and a variety of other alloys, we deliver."
+    },
+    {
+      "code": "3940",
+      "description": "Block, Tackle, Rigging, Sling",
+      "group_code": "39",
+      "group_name": "Materials Handling Equipment",
+      "confidence": "medium",
+      "reasoning": "The company produces wire rope and fittings/slings used in block, tackle, rigging, and sling applications.",
+      "evidence": "Hardware & Fittings​ Loos & Co., Inc. has long been a manufacturer of high-quality wire rope fittings and accessories for a variety of industries."
+    },
+    {
+      "code": "5342",
+      "description": "Hardware, Weapon System",
+      "group_code": "53",
+      "group_name": "Hardware and Abrasives",
+      "confidence": "medium",
+      "reasoning": "The company produces MIL-SPEC hardware and fittings specifically for weapon system applications in defense contexts.",
+      "evidence": "A recognized leader in the field of Mil-Spec hardware and wire rope fittings, our CNC parts supply to most major distributors and industries around the globe."
+    }
+  ]
+}
