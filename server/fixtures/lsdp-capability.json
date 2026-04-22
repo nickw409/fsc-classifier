@@ -1,6 +1,6 @@
 {
   "companyName": "LSDP",
-  "analysis": "LSDP (Lone Star Downhole Products) is a precision CNC machining, rubber molding, welding/fabrication, and laser engraving manufacturer serving multiple industries including oil & gas downhole equipment.",
+  "analysis": "LSDP (Lone Star Downhole Products) is a precision contract manufacturer offering CNC machining, rubber molding, welding/fabrication, and laser engraving, primarily serving downhole (oil & gas) and other industrial customers.",
   "sources": {
     "website": {
       "ok": false,
@@ -27,7 +27,7 @@
       "group_name": "Metalworking Machinery",
       "confidence": "high",
       "reasoning": "The company operates CNC mills and lathes for precision machining, which falls under machining centers and way-type machines.",
-      "evidence": "equipped CNC mills and lathes - we support customers from prototype development through full-scale production"
+      "evidence": "Operating out of our new multi-building facility - equipped CNC mills and lathes - we support customers from prototype development through full-scale production."
     },
     {
       "code": "3416",
@@ -35,7 +35,7 @@
       "group_code": "34",
       "group_name": "Metalworking Machinery",
       "confidence": "high",
-      "reasoning": "The company explicitly uses CNC lathes as part of their in-house machining capabilities.",
+      "reasoning": "The company explicitly lists CNC lathes as part of their machining capability, directly corresponding to the Lathes FSC code.",
       "evidence": "equipped CNC mills and lathes"
     },
     {
@@ -44,71 +44,44 @@
       "group_code": "34",
       "group_name": "Metalworking Machinery",
       "confidence": "high",
-      "reasoning": "The company operates CNC mills as part of their multi-axis CNC machining services.",
-      "evidence": "In addition to multi-axis CNC machining"
+      "reasoning": "CNC mills are listed as core equipment, corresponding to milling machines under FSC 3417.",
+      "evidence": "equipped CNC mills and lathes"
     },
     {
       "code": "3438",
       "description": "Miscellaneous Welding Equipment",
       "group_code": "34",
       "group_name": "Metalworking Machinery",
-      "confidence": "high",
-      "reasoning": "The company provides in-house welding/fabrication as a core service offering.",
-      "evidence": "we're well known for our in-house rubber molding and welding/fabrication capabilities"
+      "confidence": "medium",
+      "reasoning": "The company offers in-house welding and fabrication services, which aligns with miscellaneous welding equipment/services.",
+      "evidence": "In addition to multi-axis CNC machining, we're well known for our in-house rubber molding and welding/fabrication capabilities."
     },
     {
       "code": "3620",
       "description": "Rubber and Plastics Working Machinery",
       "group_code": "36",
       "group_name": "Special Industry Machinery",
-      "confidence": "high",
-      "reasoning": "The company offers in-house rubber molding as one of its primary manufacturing capabilities.",
-      "evidence": "we're well known for our in-house rubber molding and welding/fabrication capabilities"
-    },
-    {
-      "code": "9320",
-      "description": "Rubber Fabricated Materials",
-      "group_code": "93",
-      "group_name": "Nonmetallic Fabricated Materials",
       "confidence": "medium",
-      "reasoning": "The company's rubber molding capability produces rubber fabricated materials and components.",
-      "evidence": "In-House Services Include CNC Machining Rubber Molding Fabrication Laser Engraving"
+      "reasoning": "The company provides in-house rubber molding, which corresponds to rubber and plastics working machinery/products.",
+      "evidence": "we're well known for our in-house rubber molding and welding/fabrication capabilities."
     },
     {
-      "code": "3611",
-      "description": "Industrial Marking Machinery",
-      "group_code": "36",
-      "group_name": "Special Industry Machinery",
-      "confidence": "medium",
-      "reasoning": "Laser engraving is listed as an in-house service, which aligns with industrial marking machinery.",
-      "evidence": "In-House Services Include CNC Machining Rubber Molding Fabrication Laser Engraving"
-    },
-    {
-      "code": "3441",
-      "description": "Bending and Forming Machinery",
-      "group_code": "34",
-      "group_name": "Metalworking Machinery",
-      "confidence": "medium",
-      "reasoning": "The fabrication services offered likely include bending and forming operations as part of metalworking.",
-      "evidence": "In-House Services Include CNC Machining Rubber Molding Fabrication Laser Engraving"
-    },
-    {
-      "code": "3820",
-      "description": "Mining, Rock Drilling, Earth Boring, Related Equipment",
+      "code": "3835",
+      "description": "Petroleum Production and Distribution Equipment",
       "group_code": "38",
       "group_name": "Construction, Mining, Excavating, and Highway Maintenance Equipment",
       "confidence": "medium",
-      "reasoning": "The company name 'Lone Star Downhole Products' and NAICS codes suggest manufacturing of downhole drilling and earth boring components used in oil & gas.",
-      "evidence": "Lone Star Downhole Products (LSDP) has built a strong reputation across multiple industries for delivering high-quality, precision-machined components"
+      "reasoning": "The company name references 'Downhole Products' and NAICS codes 332710/332721 indicate precision-machined components for petroleum/downhole applications.",
+      "evidence": "Lone Star Downhole Products (LSDP) has built a strong reputation across multiple industries for delivering high-quality, precision-machined components."
     },
     {
       "code": "3460",
       "description": "Machine Tool Accessories",
       "group_code": "34",
       "group_name": "Metalworking Machinery",
-      "confidence": "medium",
-      "reasoning": "Precision CNC machining operations produce machine tool accessories and related components.",
-      "evidence": "equipped CNC mills and lathes - we support customers from prototype development through full-scale production"
+      "confidence": "low",
+      "reasoning": "Multi-axis CNC machining for precision components may include machine tool accessories and fixtures as part of their manufacturing scope.",
+      "evidence": "In addition to multi-axis CNC machining, we're well known for our in-house rubber molding and welding/fabrication capabilities."
     }
   ]
 }

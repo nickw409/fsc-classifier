@@ -14,12 +14,26 @@ export type ClassifyResult = {
   rawLLMResponse: string;
 };
 
+// OpenRouter passes `cache_control` through to Anthropic for provider-native
+// prompt caching. The static FSC-list prefix is marked ephemeral so repeat
+// calls within the TTL skip re-processing ~5k tokens.
+type AnthropicContentBlock =
+  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
+  | { type: "text"; text: string };
+
 export async function classify(inputs: ClassifyInputs): Promise<ClassifyResult> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("[classify] OPENROUTER_API_KEY not set");
 
-  const prompt = buildPrompt({ ...inputs, fscCodes: allFsc() });
-  console.log(`[classify] prompt ${prompt.length} chars -> ${MODEL}`);
+  const { staticPrefix, dynamicSuffix } = buildPrompt({ ...inputs, fscCodes: allFsc() });
+  console.log(
+    `[classify] static=${staticPrefix.length}ch dynamic=${dynamicSuffix.length}ch -> ${MODEL}`,
+  );
+
+  const content: AnthropicContentBlock[] = [
+    { type: "text", text: staticPrefix, cache_control: { type: "ephemeral" } },
+    { type: "text", text: dynamicSuffix },
+  ];
 
   const res = await fetch(ENDPOINT, {
     method: "POST",
@@ -29,7 +43,8 @@ export async function classify(inputs: ClassifyInputs): Promise<ClassifyResult> 
     },
     body: JSON.stringify({
       model: MODEL,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content }],
+      usage: { include: true },
     }),
   });
 
@@ -39,10 +54,24 @@ export async function classify(inputs: ClassifyInputs): Promise<ClassifyResult> 
   }
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
+    };
   };
   const raw = data.choices?.[0]?.message?.content;
   if (typeof raw !== "string") {
     throw new Error(`[classify] unexpected response shape: ${JSON.stringify(data).slice(0, 500)}`);
+  }
+
+  const u = data.usage;
+  if (u) {
+    const cacheRead = u.prompt_tokens_details?.cached_tokens ?? 0;
+    const cacheWrite = u.prompt_tokens_details?.cache_write_tokens ?? 0;
+    console.log(
+      `[classify] tokens in=${u.prompt_tokens ?? "?"} out=${u.completion_tokens ?? "?"} cached_read=${cacheRead} cache_write=${cacheWrite}`,
+    );
   }
 
   const parsed = parseLLMResponse(raw);

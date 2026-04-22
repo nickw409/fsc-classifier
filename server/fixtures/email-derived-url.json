@@ -1,6 +1,6 @@
 {
   "companyName": "Loos (email-derived)",
-  "analysis": "Loos & Co. manufactures aircraft cable, wire rope, cable assemblies, hardware/fittings, and CNC-machined components to MIL-SPEC and commercial standards for aerospace, defense, automotive, marine, and medical industries.",
+  "analysis": "Loos & Co. is a manufacturer of wire rope, aircraft cable, cable assemblies, wire rope fittings/hardware, coated cable, and CNC-machined components for aerospace, defense, military, automotive, marine, and medical industries.",
   "sources": {
     "website": {
       "ok": true,
@@ -27,8 +27,8 @@
       "group_code": "40",
       "group_name": "Rope, Cable, Chain, and Fittings",
       "confidence": "high",
-      "reasoning": "The company explicitly manufactures wire rope and aircraft cable in stainless steel, galvanized carbon steel, and other alloys.",
-      "evidence": "Aircraft Cable Loos and Company manufactures and stocks aircraft cable to commercial and military specifications in stainless steel, galvanized carbon steel, and a variety of other alloys."
+      "reasoning": "The company manufactures wire rope and cable products including stainless steel, galvanized, and carbon steel wire rope for multiple industries.",
+      "evidence": "Wire Rope When looking for the highest quality domestic Wire Rope in stainless steel, galvanized, bright carbon steel and a variety of other alloys, we deliver."
     },
     {
       "code": "4030",
@@ -36,7 +36,7 @@
       "group_code": "40",
       "group_name": "Rope, Cable, Chain, and Fittings",
       "confidence": "high",
-      "reasoning": "The company manufactures wire rope fittings and accessories, which are fittings for rope and cable.",
+      "reasoning": "The company manufactures fittings and accessories for wire rope, hose, pipe, and tube applications.",
       "evidence": "Hardware & Fittings​ Loos & Co., Inc. has long been a manufacturer of high-quality wire rope fittings and accessories for a variety of industries."
     },
     {
@@ -45,53 +45,8 @@
       "group_code": "59",
       "group_name": "Electrical and Electronic Equipment Components",
       "confidence": "high",
-      "reasoning": "The company manufactures cable assemblies for aerospace and defense applications, matching this FSC category for cable and wire assemblies.",
+      "reasoning": "The company manufactures cable assemblies for aerospace, defense, and communications equipment applications.",
       "evidence": "Cable Assemblies​ We maintain large inventories of both bare and coated cable as well as fittings to satisfy your immediate needs."
-    },
-    {
-      "code": "9505",
-      "description": "Wire, Nonelectrical",
-      "group_code": "95",
-      "group_name": "Metal Bars, Sheets, and Shapes",
-      "confidence": "high",
-      "reasoning": "The company produces nonelectrical wire (aircraft cable and wire rope) in various steel alloys.",
-      "evidence": "When looking for the highest quality domestic Wire Rope in stainless steel, galvanized, bright carbon steel and a variety of other alloys, we deliver."
-    },
-    {
-      "code": "5340",
-      "description": "Hardware, Commercial",
-      "group_code": "53",
-      "group_name": "Hardware and Abrasives",
-      "confidence": "high",
-      "reasoning": "The company manufactures commercial hardware including wire rope fittings, bushings, and accessories for various industries.",
-      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
-    },
-    {
-      "code": "5365",
-      "description": "Bushings, Rings, Shims and Spacers",
-      "group_code": "53",
-      "group_name": "Hardware and Abrasives",
-      "confidence": "medium",
-      "reasoning": "The company explicitly manufactures bushings, which fall under the FSC category for bushings, rings, shims and spacers.",
-      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
-    },
-    {
-      "code": "3940",
-      "description": "Block, Tackle, Rigging, Sling",
-      "group_code": "39",
-      "group_name": "Materials Handling Equipment",
-      "confidence": "medium",
-      "reasoning": "Wire rope and rigging products manufactured by Loos are used in block, tackle, rigging and sling applications.",
-      "evidence": "Wire Rope When looking for the highest quality domestic Wire Rope in stainless steel, galvanized, bright carbon steel and a variety of other alloys, we deliver."
-    },
-    {
-      "code": "2020",
-      "description": "Rigging and Rigging Gear",
-      "group_code": "20",
-      "group_name": "Ship and Marine Equipment",
-      "confidence": "medium",
-      "reasoning": "The company serves the marine industry and manufactures wire rope and cable products used in rigging and rigging gear for ships.",
-      "evidence": "Marine Learn More >"
     },
     {
       "code": "1560",
@@ -99,17 +54,44 @@
       "group_code": "15",
       "group_name": "Aircraft and Airframe Structural Components",
       "confidence": "medium",
-      "reasoning": "The company manufactures MIL-SPEC aircraft cable assemblies and hardware components used in airframe structural applications.",
-      "evidence": "MIL-SPEC & SPECIALIZED MANUFACTURING"
+      "reasoning": "The company supplies aerospace and defense cables and cable assemblies that are used in airframe structural components and systems.",
+      "evidence": "We specialize in manufacturing high-quality Aerospace & Defense Cables, Cable Assemblies, Hardware, Bushings and more."
     },
     {
-      "code": "9525",
-      "description": "Wire, Nonelectrical, Nonferrous Base Metal",
+      "code": "5305",
+      "description": "Screws",
+      "group_code": "53",
+      "group_name": "Hardware and Abrasives",
+      "confidence": "medium",
+      "reasoning": "The company performs CNC machining to manufacture MIL-Spec hardware including fasteners and fittings supplied to major distributors.",
+      "evidence": "A recognized leader in the field of Mil-Spec hardware and wire rope fittings, our CNC parts supply to most major distributors and industries around the globe."
+    },
+    {
+      "code": "5340",
+      "description": "Hardware, Commercial",
+      "group_code": "53",
+      "group_name": "Hardware and Abrasives",
+      "confidence": "medium",
+      "reasoning": "The company manufactures commercial hardware and fittings for a variety of industries including marine, automotive, and architectural.",
+      "evidence": "Manufacturing and distributing wire, wire rope and cable, cable assemblies, fasteners and tools around the world at our various locations and subsidiaries."
+    },
+    {
+      "code": "9505",
+      "description": "Wire, Nonelectrical",
       "group_code": "95",
       "group_name": "Metal Bars, Sheets, and Shapes",
-      "confidence": "medium",
-      "reasoning": "The company produces nonelectrical wire in nonferrous base metals such as stainless steel alloys.",
-      "evidence": "manufactures and stocks aircraft cable to commercial and military specifications in stainless steel, galvanized carbon steel, and a variety of other alloys"
+      "confidence": "high",
+      "reasoning": "The company manufactures non-electrical wire including stainless steel and galvanized carbon steel aircraft cable and wire rope.",
+      "evidence": "Loos and Company manufactures and stocks aircraft cable to commercial and military specifications in stainless steel, galvanized carbon steel, and a variety of other alloys."
+    },
+    {
+      "code": "2090",
+      "description": "Miscellaneous Ship Marine Equipment",
+      "group_code": "20",
+      "group_name": "Ship and Marine Equipment",
+      "confidence": "low",
+      "reasoning": "The company serves the marine industry with wire rope and cable products that may be used in ship and marine equipment.",
+      "evidence": "With a focus on precision and versatility, our wire and cable products cater to the unique demands of various industries, including but not limited to: Aerospace Learn More > Architecture Learn More > Automotive Learn More > Marine Learn More >"
     }
   ]
 }

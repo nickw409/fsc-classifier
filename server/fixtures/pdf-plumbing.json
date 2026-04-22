@@ -1,6 +1,6 @@
 {
   "companyName": "PDF Plumbing Check",
-  "analysis": "PDF Plumbing Check appears to be a plumbing-related company, as inferred from its name, likely providing plumbing inspection, fixtures, or related services/products.",
+  "analysis": "The uploaded document is a U.S. government reference table of FSC assignments to DLA/GSA, not a company profile; the company name 'PDF Plumbing Check' suggests a plumbing-related business, but no website, description, or other content is available to confirm specific products or services.",
   "sources": {
     "website": {
       "ok": false,
@@ -25,36 +25,18 @@
       "description": "Plumbing Fixtures and Accessories",
       "group_code": "45",
       "group_name": "Plumbing, Heating, and Waste Disposal Equipment",
-      "confidence": "medium",
-      "reasoning": "The company name references plumbing, which aligns with plumbing fixtures and accessories.",
-      "evidence": "4510 Plumbing Fixtures and Accessories S9I/KZ"
+      "confidence": "low",
+      "reasoning": "The company name references 'Plumbing,' which most directly aligns with plumbing fixtures and accessories, though no substantive evidence exists beyond the name.",
+      "evidence": "PDF Plumbing Check"
     },
     {
       "code": "4540",
       "description": "Miscellaneous Plumbing, Heat and Sanitation Equipment",
       "group_code": "45",
       "group_name": "Plumbing, Heating, and Waste Disposal Equipment",
-      "confidence": "medium",
-      "reasoning": "The company name references plumbing, which may encompass miscellaneous plumbing, heat, and sanitation equipment.",
-      "evidence": "4540 Miscellaneous Plumbing, Heat and Sanitation Equipment S9I/KZ"
-    },
-    {
-      "code": "4730",
-      "description": "Fittings and Specialties; Hose, Pipe and Tube",
-      "group_code": "47",
-      "group_name": "Pipe, Tubing, Hose, and Fittings",
       "confidence": "low",
-      "reasoning": "Plumbing work commonly involves pipe fittings and specialties, which could be part of this company's offerings.",
-      "evidence": "4730 Fittings and Specialties; Hose, Pipe and Tube S9C/AX"
-    },
-    {
-      "code": "4710",
-      "description": "Pipe and Tube",
-      "group_code": "47",
-      "group_name": "Pipe, Tubing, Hose, and Fittings",
-      "confidence": "low",
-      "reasoning": "Plumbing inspection and services typically involve pipe and tube products.",
-      "evidence": "4710 Pipe and Tube S9C/AX"
+      "reasoning": "The plumbing reference in the company name could extend to miscellaneous plumbing, heat, and sanitation equipment.",
+      "evidence": "PDF Plumbing Check"
     }
   ]
 }

@@ -37,10 +37,12 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
     const derivedUrl = websiteUrl ? undefined : deriveUrlFromEmail(email);
     const scrapeTarget = websiteUrl ?? derivedUrl;
 
+    const t0 = Date.now();
     const [website, pdf] = await Promise.all([
       scrapeTarget ? scrape(scrapeTarget) : Promise.resolve({ ok: false, chars: 0, text: "" }),
       pdfFile ? extractPdf(pdfFile.buffer) : Promise.resolve({ ok: false, chars: 0, text: "" }),
     ]);
+    const tExtract = Date.now();
 
     const descStatus: SourceStatus = description
       ? { ok: true, chars: description.length }
@@ -62,6 +64,8 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
       description,
       email: email && !isConsumerEmail(email) ? email : undefined,
     });
+    const tClassify = Date.now();
+    console.log(`[timing] extract=${tExtract - t0}ms classify=${tClassify - tExtract}ms total=${tClassify - t0}ms`);
 
     const body: ClassifyResponse = {
       companyName,
