@@ -12,3 +12,7 @@ coverage/
 *.log
 
 .claude/settings.local.json
+
+# Third-party capability-statement PDFs — keep only the assignment artifact.
+data/*.pdf
+!data/AV_FSCClassAssignment._151007.pdf

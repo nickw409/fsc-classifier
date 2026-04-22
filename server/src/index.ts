@@ -7,6 +7,7 @@ import express, { type Request, type Response } from "express";
 import multer from "multer";
 import { loadFscCodes } from "./fsc.js";
 import { scrape } from "./scrape.js";
+import { extractPdf } from "./pdf.js";
 import { classify } from "./classify.js";
 import type { ClassifyResponse, SourceStatus } from "./types.js";
 
@@ -30,11 +31,13 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
     const description = str(req.body?.description);
     const debug = req.query?.debug === "1";
 
-    const website: SourceStatus & { text: string } = websiteUrl
-      ? await scrape(websiteUrl)
-      : { ok: false, chars: 0, text: "" };
+    const pdfFile = req.file;
 
-    const pdf: SourceStatus = { ok: false, chars: 0 };
+    const [website, pdf] = await Promise.all([
+      websiteUrl ? scrape(websiteUrl) : Promise.resolve({ ok: false, chars: 0, text: "" }),
+      pdfFile ? extractPdf(pdfFile.buffer) : Promise.resolve({ ok: false, chars: 0, text: "" }),
+    ]);
+
     const descStatus: SourceStatus = description
       ? { ok: true, chars: description.length }
       : { ok: false, chars: 0 };
@@ -45,7 +48,7 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
     const result = await classify({
       companyName,
       websiteText: website.ok ? website.text : undefined,
-      pdfText: undefined,
+      pdfText: pdf.ok ? pdf.text : undefined,
       description,
       email,
     });
@@ -55,7 +58,7 @@ app.post("/api/classify", upload.single("pdf"), async (req: Request, res: Respon
       analysis: result.analysis,
       sources: {
         website: stripText(website),
-        pdf,
+        pdf: stripText(pdf),
         description: descStatus,
         email: emailStatus,
       },
