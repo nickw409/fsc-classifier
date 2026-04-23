@@ -1,3 +1,82 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 0.985 0.003 250;
+    --bg-elev: 1 0 0;
+    --bg-subtle: 0.975 0.004 250;
+    --border: 0.915 0.006 250;
+    --border-strong: 0.87 0.008 250;
+    --ink: 0.22 0.015 255;
+    --ink-2: 0.42 0.012 255;
+    --ink-3: 0.58 0.01 255;
+    --ink-4: 0.72 0.008 255;
+    --accent: 0.55 0.15 250;
+    --accent-hi: 0.50 0.17 250;
+    --accent-bg: 0.96 0.02 250;
+    --accent-border: 0.88 0.05 250;
+    --ok-bg: 0.96 0.035 160;   --ok-fg: 0.40 0.09 160;   --ok-border: 0.88 0.06 160;
+    --warn-bg: 0.965 0.05 85;  --warn-fg: 0.45 0.09 70;  --warn-border: 0.87 0.08 85;
+    --err-bg: 0.965 0.035 20;  --err-fg: 0.48 0.13 25;   --err-border: 0.87 0.06 20;
+  }
+  [data-theme="dark"] {
+    --bg: 0.18 0.012 255;       --bg-elev: 0.22 0.013 255;  --bg-subtle: 0.25 0.013 255;
+    --border: 0.30 0.012 255;   --border-strong: 0.38 0.014 255;
+    --ink: 0.96 0.006 250;      --ink-2: 0.82 0.008 250;
+    --ink-3: 0.66 0.010 250;    --ink-4: 0.52 0.012 255;
+    --accent: 0.58 0.16 250;    --accent-hi: 0.64 0.16 250;
+    --accent-bg: 0.28 0.06 250; --accent-border: 0.42 0.09 250;
+    --ok-bg: 0.28 0.05 160;     --ok-fg: 0.82 0.10 160;     --ok-border: 0.38 0.07 160;
+    --warn-bg: 0.30 0.055 75;   --warn-fg: 0.85 0.10 85;    --warn-border: 0.42 0.08 75;
+    --err-bg: 0.30 0.055 25;    --err-fg: 0.82 0.11 25;     --err-border: 0.42 0.08 25;
+    color-scheme: dark;
+  }
+  html, body { background: oklch(var(--bg)); color: oklch(var(--ink)); height: 100%; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  button { font-family: inherit; color: inherit; }
+  input, textarea, select { font-family: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid oklch(var(--accent)); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: oklch(var(--accent-bg)); }
+  .font-mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-feature-settings: "ss01", "zero"; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: oklch(var(--border-strong)); border-radius: 999px; border: 2px solid oklch(var(--bg)); }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(var(--ink-4)); }
+}
+
+@layer utilities {
+  .fade-up { animation: fade-up 320ms ease both; }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid oklch(var(--border-strong));
+    border-top-color: oklch(var(--ink));
+    border-radius: 50%;
+    animation: spinner-spin 0.8s linear infinite;
+  }
+  @keyframes spinner-spin { to { transform: rotate(360deg); } }
+
+  .shimmer { position: relative; overflow: hidden; }
+  .shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, oklch(var(--accent) / 0.18), transparent);
+    animation: shimmer-slide 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}

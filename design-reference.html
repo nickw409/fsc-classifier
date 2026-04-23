@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FSC Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Cool slate neutrals, low chroma */
+    --bg:         oklch(0.985 0.003 250);
+    --bg-elev:    oklch(1 0 0);
+    --bg-subtle:  oklch(0.975 0.004 250);
+    --border:     oklch(0.915 0.006 250);
+    --border-strong: oklch(0.87 0.008 250);
+    --ink:        oklch(0.22 0.015 255);
+    --ink-2:      oklch(0.42 0.012 255);
+    --ink-3:      oklch(0.58 0.01 255);
+    --ink-4:      oklch(0.72 0.008 255);
+
+    /* Single accent — calm blue */
+    --accent:     oklch(0.55 0.15 250);
+    --accent-hi:  oklch(0.50 0.17 250);
+    --accent-bg:  oklch(0.96 0.02 250);
+    --accent-border: oklch(0.88 0.05 250);
+
+    /* Semantic */
+    --ok-bg:      oklch(0.96 0.035 160);
+    --ok-fg:      oklch(0.40 0.09 160);
+    --ok-border:  oklch(0.88 0.06 160);
+
+    --warn-bg:    oklch(0.965 0.05 85);
+    --warn-fg:    oklch(0.45 0.09 70);
+    --warn-border: oklch(0.87 0.08 85);
+
+    --err-bg:     oklch(0.965 0.035 20);
+    --err-fg:     oklch(0.48 0.13 25);
+    --err-border: oklch(0.87 0.06 20);
+
+    --radius:     6px;
+    --radius-lg:  10px;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  [data-theme="dark"] {
+    --bg:         oklch(0.18 0.012 255);
+    --bg-elev:    oklch(0.22 0.013 255);
+    --bg-subtle:  oklch(0.25 0.013 255);
+    --border:     oklch(0.30 0.012 255);
+    --border-strong: oklch(0.38 0.014 255);
+    --ink:        oklch(0.96 0.006 250);
+    --ink-2:      oklch(0.82 0.008 250);
+    --ink-3:      oklch(0.66 0.010 250);
+    --ink-4:      oklch(0.52 0.012 255);
+
+    --accent:     oklch(0.58 0.16 250);
+    --accent-hi:  oklch(0.64 0.16 250);
+    --accent-bg:  oklch(0.28 0.06 250);
+    --accent-border: oklch(0.42 0.09 250);
+
+    --ok-bg:      oklch(0.28 0.05 160);
+    --ok-fg:      oklch(0.82 0.10 160);
+    --ok-border:  oklch(0.38 0.07 160);
+
+    --warn-bg:    oklch(0.30 0.055 75);
+    --warn-fg:    oklch(0.85 0.10 85);
+    --warn-border: oklch(0.42 0.08 75);
+
+    --err-bg:     oklch(0.30 0.055 25);
+    --err-fg:     oklch(0.82 0.11 25);
+    --err-border: oklch(0.42 0.08 25);
+
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  button { font-family: inherit; color: inherit; }
+  input, textarea, select { font-family: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: var(--accent-bg); }
+
+  .mono { font-family: var(--mono); font-feature-settings: "ss01","zero"; }
+
+  /* scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+  /* Tiny spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--ink);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Progress shimmer for loading bar */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, oklch(0.55 0.15 250 / 0.18), transparent);
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* subtle fade-in for results */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 320ms ease both; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Tweak defaults -->
+<script>
+  window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "showEvidence": true,
+    "previewState": "empty",
+    "theme": "dark"
+  }/*EDITMODE-END*/;
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+
+<script type="text/babel" data-from="src/fixtures.jsx">
+// Sample ClassifyResponse fixtures for each state.
+
+const fx_happy = {
+  companyName: "Loos & Co., Inc.",
+  analysis: "Manufacturer of aircraft-grade wire rope, cable assemblies, and associated rigging hardware used in aerospace, military, and industrial applications.",
+  sources: {
+    website:     { ok: true,  chars: 7842 },
+    pdf:         { ok: false, chars: 0, error: "(none)" },
+    description: { ok: true,  chars: 0 },
+    email:       { ok: false, chars: 0, error: "(none)" },
+  },
+  codes: [
+    { code: "4010", description: "Chain and Wire Rope", group_code: "40", group_name: "Rope, Cable, Chain and Fittings",
+      confidence: "high",
+      reasoning: "Core product line is aircraft-grade wire rope and galvanized/stainless steel cable.",
+      evidence: "Loos & Co. manufactures aircraft cable, wire rope, and push-pull control cables to military and commercial specifications." },
+    { code: "4030", description: "Fittings for Rope, Cable, and Chain", group_code: "40", group_name: "Rope, Cable, Chain and Fittings",
+      confidence: "high",
+      reasoning: "Complementary line of swage fittings, turnbuckles, and cable terminations.",
+      evidence: "end fittings, turnbuckles, and mechanical swage terminals available for every cable diameter we produce." },
+    { code: "1560", description: "Airframe Structural Components", group_code: "15", group_name: "Aircraft and Airframe Structural Components",
+      confidence: "medium",
+      reasoning: "Supplies control cables used as flight control structural components in fixed-wing and rotary aircraft.",
+      evidence: "push-pull control cable assemblies for flight control systems on fixed-wing and rotorcraft platforms." },
+    { code: "1680", description: "Miscellaneous Aircraft Accessories and Components", group_code: "16", group_name: "Aircraft Components and Accessories",
+      confidence: "medium",
+      reasoning: "Supplies aircraft-grade assemblies and components beyond airframe structures.",
+      evidence: "assemblies certified to AS9100D and manufactured in accordance with MIL-DTL-83420." },
+    { code: "3040", description: "Miscellaneous Power Transmission Equipment", group_code: "30", group_name: "Mechanical Power Transmission Equipment",
+      confidence: "low",
+      reasoning: "Push-pull cables serve as power-transmission linkages in some applications.",
+      evidence: "push-pull control cable assemblies" },
+    { code: "9505", description: "Wire, Nonelectrical, Nonferrous Base Metal", group_code: "95", group_name: "Metal Bars, Sheets, and Shapes",
+      confidence: "medium",
+      reasoning: "Stocks and sells bulk stainless and galvanized wire as raw stock.",
+      evidence: "stainless steel wire in sizes from .006\" through .375\" diameter, sold by the reel." },
+  ],
+};
+
+const fx_sparse = {
+  companyName: "Nowhere Supply LLC",
+  analysis: "Appears to be a small regional supplier; only a brief self-description was available.",
+  sources: {
+    website:     { ok: false, chars: 0, error: "ENOTFOUND" },
+    pdf:         { ok: false, chars: 0, error: "(none)" },
+    description: { ok: true,  chars: 142 },
+    email:       { ok: false, chars: 0, error: "(none)" },
+  },
+  codes: [
+    { code: "5120", description: "Hand Tools, Nonedged, Nonpowered", group_code: "51", group_name: "Hand Tools",
+      confidence: "low",
+      reasoning: "Description mentions 'basic hand tools and hardware' without elaboration.",
+      evidence: "we distribute basic hand tools and hardware to regional contractors." },
+    { code: "5305", description: "Screws", group_code: "53", group_name: "Hardware and Abrasives",
+      confidence: "low",
+      reasoning: "Generic reference to hardware suggests common fastener stock, but no specifics.",
+      evidence: "hardware to regional contractors" },
+  ],
+};
+
+const fx_error = {
+  companyName: "H&R Aircraft Parts",
+  analysis: "Unable to retrieve content from the provided website. Classification could not proceed without additional inputs.",
+  sources: {
+    website:     { ok: false, chars: 0, error: "TLS handshake failed: certificate has expired" },
+    pdf:         { ok: false, chars: 0, error: "(none)" },
+    description: { ok: false, chars: 0, error: "(none)" },
+    email:       { ok: true,  chars: 17, derivedUrl: "https://hrparts.com" },
+  },
+  codes: [],
+  errorBanner: "Scrape failed and no description was provided — try adding a short description of what the company does, or upload a capability statement PDF.",
+};
+
+const fx_empty_codes = {
+  companyName: "Meridian Holdings LLC",
+  analysis: "Parent holding company with minimal public-facing product information; the scraped site describes corporate investment activity rather than any specific goods or services procurable under FSC.",
+  sources: {
+    website:     { ok: true,  chars: 2104 },
+    pdf:         { ok: false, chars: 0, error: "(none)" },
+    description: { ok: false, chars: 0 },
+    email:       { ok: false, chars: 0, error: "(none)" },
+  },
+  codes: [],
+};
+
+// History entries shown in the sidebar. Each stores a ref to a response.
+const fx_history = [
+  { id: "h1", companyName: "Loos & Co., Inc.",    url: "loosco.com",         ts: "2m ago",  topCode: "4010", count: 6, result: "happy" },
+  { id: "h2", companyName: "LSDP Manufacturing",  url: "lsdp.example.com",   ts: "14m ago", topCode: "3411", count: 4, result: "happy" },
+  { id: "h3", companyName: "H&R Aircraft Parts",  url: "hrparts.com",        ts: "1h ago",  topCode: "—",    count: 0, result: "error" },
+  { id: "h4", companyName: "Nowhere Supply LLC",  url: "(description only)", ts: "yesterday", topCode: "5120", count: 2, result: "sparse" },
+  { id: "h5", companyName: "Pacific Fasteners",   url: "pacfast.com",        ts: "Apr 18",  topCode: "5305", count: 3, result: "happy" },
+  { id: "h6", companyName: "Meridian Holdings",   url: "meridian-hld.com",   ts: "Apr 17",  topCode: "—",    count: 0, result: "empty_codes" },
+];
+
+Object.assign(window, { fx_happy, fx_sparse, fx_error, fx_empty_codes, fx_history });
+
+</script>
+
+<script type="text/babel" data-from="src/icons.jsx">
+// Small inline SVG icons — stroke-based, 1.6px for the dense UI feel.
+
+const Icon = ({ d, size = 14, stroke = 1.6, fill = "none", children, ...rest }) => (
+  <svg
+    width={size} height={size} viewBox="0 0 24 24"
+    fill={fill} stroke="currentColor" strokeWidth={stroke}
+    strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden="true" {...rest}
+  >
+    {d ? <path d={d} /> : children}
+  </svg>
+);
+
+const IconSearch  = (p) => <Icon {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></Icon>;
+const IconHistory = (p) => <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></Icon>;
+const IconDoc     = (p) => <Icon {...p}><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></Icon>;
+const IconLink    = (p) => <Icon {...p}><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></Icon>;
+const IconMail    = (p) => <Icon {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></Icon>;
+const IconText    = (p) => <Icon {...p}><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></Icon>;
+const IconCopy    = (p) => <Icon {...p}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></Icon>;
+const IconCheck   = (p) => <Icon {...p}><path d="m5 12 5 5 9-12"/></Icon>;
+const IconX       = (p) => <Icon {...p}><path d="M6 6l12 12"/><path d="M18 6 6 18"/></Icon>;
+const IconChevD   = (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>;
+const IconChevR   = (p) => <Icon {...p}><path d="m9 6 6 6-6 6"/></Icon>;
+const IconDown    = (p) => <Icon {...p}><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/></Icon>;
+const IconRefresh = (p) => <Icon {...p}><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></Icon>;
+const IconPlus    = (p) => <Icon {...p}><path d="M12 5v14"/><path d="M5 12h14"/></Icon>;
+const IconWarn    = (p) => <Icon {...p}><path d="M12 3 2 20h20z"/><path d="M12 10v5"/><path d="M12 18h.01"/></Icon>;
+const IconEmpty   = (p) => <Icon {...p}><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></Icon>;
+const IconDot     = ({size=8, color="currentColor"}) => (
+  <svg width={size} height={size} viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill={color}/></svg>
+);
+const IconSun     = (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></Icon>;
+const IconMoon    = (p) => <Icon {...p}><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></Icon>;
+
+Object.assign(window, {
+  IconSearch, IconHistory, IconDoc, IconLink, IconMail, IconText,
+  IconCopy, IconCheck, IconX, IconChevD, IconChevR, IconDown,
+  IconRefresh, IconPlus, IconWarn, IconEmpty, IconDot, IconSun, IconMoon,
+});
+
+</script>
+
+<script type="text/babel" data-from="src/components.jsx">
+// Shared UI — Sidebar with history, TopBar, Form, submitted-bar, Loading, Empty/Error banners.
+
+const { useState, useRef, useEffect } = React;
+
+// ---------- Pills / Badges ----------
+
+function ConfidencePill({ confidence }) {
+  const map = {
+    high:   { bg: "var(--ok-bg)",   fg: "var(--ok-fg)",   br: "var(--ok-border)" },
+    medium: { bg: "var(--warn-bg)", fg: "var(--warn-fg)", br: "var(--warn-border)" },
+    low:    { bg: "var(--err-bg)",  fg: "var(--err-fg)",  br: "var(--err-border)" },
+  };
+  const c = map[confidence] || { bg: "var(--bg-subtle)", fg: "var(--ink-3)", br: "var(--border)" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: c.bg, color: c.fg,
+      border: `1px solid ${c.br}`,
+      padding: "2px 7px", borderRadius: 999,
+      fontSize: 10.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase",
+      fontFeatureSettings: '"ss01"',
+    }}>
+      <IconDot size={6} color={c.fg} />
+      {confidence}
+    </span>
+  );
+}
+
+function SourceBadge({ label, status, icon: IconC }) {
+  const state = status.ok ? "ok" : status.error && status.error !== "(none)" ? "err" : "empty";
+  const palette = {
+    ok:    { bg: "var(--ok-bg)",     fg: "var(--ok-fg)",    br: "var(--ok-border)"    },
+    err:   { bg: "var(--warn-bg)",   fg: "var(--warn-fg)",  br: "var(--warn-border)"  },
+    empty: { bg: "var(--bg-subtle)", fg: "var(--ink-4)",    br: "var(--border)"       },
+  }[state];
+  const detail = state === "ok"  ? `${status.chars.toLocaleString()} ch`
+               : state === "err" ? (status.error.length > 40 ? status.error.slice(0, 40) + "…" : status.error)
+               : "not provided";
+  return (
+    <span title={status.error || ""} className="source-badge" style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      background: palette.bg, color: palette.fg,
+      border: `1px solid ${palette.br}`,
+      padding: "3px 8px", borderRadius: 6, fontSize: 12,
+      minWidth: 0,
+    }}>
+      <IconC size={12} stroke={1.8} style={{ flexShrink: 0 }} />
+      <span style={{ fontWeight: 500, flexShrink: 0 }}>{label}</span>
+      <span style={{ opacity: 0.75, fontSize: 11.5, minWidth: 0 }}>{detail}</span>
+    </span>
+  );
+}
+
+// ---------- Sidebar ----------
+
+function Sidebar({ current, onSelect, onNew, theme, onThemeToggle }) {
+  const [q, setQ] = useState("");
+  const list = window.fx_history.filter(h =>
+    !q || h.companyName.toLowerCase().includes(q.toLowerCase()) || h.url.toLowerCase().includes(q.toLowerCase())
+  );
+  return (
+    <aside style={{
+      width: 260, flexShrink: 0, borderRight: "1px solid var(--border)",
+      background: "var(--bg)", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0,
+    }}>
+      <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 5,
+            background: "var(--accent)", color: "white",
+            display: "grid", placeItems: "center",
+            fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600,
+          }}>F</div>
+          <div style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: -0.1 }}>FSC Classifier</div>
+        </div>
+        <button onClick={onNew} style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          background: "var(--accent)", color: "white",
+          border: "1px solid var(--accent)", borderRadius: 6,
+          padding: "7px 10px", fontSize: 13, fontWeight: 500, cursor: "pointer",
+        }}>
+          <IconPlus size={13} stroke={2} /> New classification
+          <span className="mono" style={{
+            marginLeft: 6, fontSize: 10, opacity: 0.75, padding: "1px 5px",
+            border: "1px solid rgba(255,255,255,0.3)", borderRadius: 3,
+          }}>⌘K</span>
+        </button>
+      </div>
+
+      <div style={{ padding: "10px 10px 6px" }}>
+        <div style={{
+          position: "relative", display: "flex", alignItems: "center",
+          background: "var(--bg-elev)", border: "1px solid var(--border)",
+          borderRadius: 6, padding: "0 8px",
+        }}>
+          <IconSearch size={13} style={{ color: "var(--ink-4)" }} />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Search history"
+            style={{
+              flex: 1, border: "none", outline: "none", background: "transparent",
+              padding: "6px 8px", fontSize: 12.5, color: "var(--ink)",
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ padding: "4px 10px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--ink-4)", letterSpacing: 0.6, textTransform: "uppercase" }}>
+          Recent
+        </div>
+        <div style={{ fontSize: 11, color: "var(--ink-4)" }}>{list.length}</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 6px 10px" }}>
+        {list.map(h => {
+          const active = current === h.id;
+          const dotColor = h.result === "error" || h.result === "empty_codes"
+            ? "var(--warn-fg)"
+            : h.result === "sparse" ? "var(--ink-4)" : "var(--ok-fg)";
+          return (
+            <button
+              key={h.id}
+              onClick={() => onSelect(h)}
+              style={{
+                width: "100%", textAlign: "left", display: "block",
+                background: active ? "var(--accent-bg)" : "transparent",
+                border: `1px solid ${active ? "var(--accent-border)" : "transparent"}`,
+                borderRadius: 6, padding: "8px 10px", marginBottom: 2, cursor: "pointer",
+              }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--bg-subtle)"; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <IconDot size={6} color={dotColor} />
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1 }}>
+                  {h.companyName}
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3, paddingLeft: 13 }}>
+                <div style={{ fontSize: 11.5, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {h.url}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 6 }}>
+                  {h.topCode !== "—" && (
+                    <span className="mono" style={{ fontSize: 10.5, color: "var(--ink-3)" }}>{h.topCode}</span>
+                  )}
+                  <span style={{ fontSize: 10.5, color: "var(--ink-4)" }}>{h.ts}</span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{
+        borderTop: "1px solid var(--border)",
+        padding: "10px 14px", fontSize: 11, color: "var(--ink-4)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span>{window.fx_history.length} saved</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={onThemeToggle}
+            title={theme === "dark" ? "Switch to light" : "Switch to dark"}
+            style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              background: "transparent", border: "1px solid var(--border)",
+              borderRadius: 5, padding: "3px 6px", cursor: "pointer",
+              color: "var(--ink-3)",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-subtle)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            {theme === "dark" ? <IconSun size={12} stroke={1.8} /> : <IconMoon size={12} stroke={1.8} />}
+          </button>
+          <button style={{
+            background: "transparent", border: "none", padding: 0, cursor: "pointer",
+            color: "var(--ink-4)", fontSize: 11,
+          }}>Clear</button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ---------- Form (expanded) ----------
+
+function FieldLabel({ icon: IconC, label, optional }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+      <IconC size={12} stroke={1.8} style={{ color: "var(--ink-3)" }} />
+      <label style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-2)" }}>{label}</label>
+      {optional && <span style={{ fontSize: 11, color: "var(--ink-4)" }}>optional</span>}
+    </div>
+  );
+}
+
+const inputBase = {
+  width: "100%", display: "block",
+  background: "var(--bg-elev)", border: "1px solid var(--border)",
+  borderRadius: 6, padding: "8px 10px", fontSize: 13.5, color: "var(--ink)",
+  outline: "none", transition: "border-color .15s, box-shadow .15s",
+};
+
+const Input = React.forwardRef(function Input(props, ref) {
+  return (
+    <input {...props} ref={ref} style={{ ...inputBase, ...(props.style || {}) }}
+      onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 3px var(--accent-bg)"; props.onFocus?.(e); }}
+      onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; props.onBlur?.(e); }}
+    />
+  );
+});
+
+function CompanyForm({ onSubmit, initial, nameInputRef }) {
+  const [name, setName] = useState(initial?.name || "");
+  const [url, setUrl] = useState(initial?.url || "");
+  const [email, setEmail] = useState(initial?.email || "");
+  const [desc, setDesc] = useState(initial?.desc || "");
+  const [pdf, setPdf] = useState(null);
+
+  function submit(e) {
+    e?.preventDefault();
+    if (!name.trim()) return;
+    onSubmit({ name, url, email, desc, pdf });
+  }
+
+  return (
+    <form onSubmit={submit} style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, padding: 20,
+    }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: -0.2, color: "var(--ink)" }}>
+          Classify a company
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--ink-3)", marginTop: 2 }}>
+          Provide a name and any combination of inputs. Results return 4-digit FSC codes with evidence.
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 14 }}>
+        <div>
+          <FieldLabel icon={IconText} label="Company name" />
+          <Input ref={nameInputRef} value={name} onChange={e => setName(e.target.value)} placeholder="Loos & Co., Inc." required />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div>
+            <FieldLabel icon={IconLink} label="Website URL" optional />
+            <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com" />
+          </div>
+          <div>
+            <FieldLabel icon={IconMail} label="Contact email" optional />
+            <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="sales@example.com" />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel icon={IconText} label="Description" optional />
+          <textarea
+            value={desc} onChange={e => setDesc(e.target.value)}
+            rows={3}
+            placeholder="Short free-text description of what the company does, sells, or provides."
+            style={{ ...inputBase, resize: "vertical", lineHeight: 1.5, fontFamily: "var(--sans)" }}
+          />
+        </div>
+
+        <div>
+          <FieldLabel icon={IconDoc} label="Capability statement" optional />
+          <label style={{
+            display: "flex", alignItems: "center", gap: 10,
+            border: "1px dashed var(--border-strong)", borderRadius: 6,
+            padding: "10px 12px", background: "var(--bg-subtle)",
+            cursor: "pointer", fontSize: 12.5, color: "var(--ink-3)",
+          }}>
+            <IconDoc size={14} stroke={1.6} />
+            <span>
+              {pdf ? pdf.name : "Drop a PDF, or "}
+              {!pdf && <span style={{ color: "var(--accent)", textDecoration: "underline" }}>browse</span>}
+            </span>
+            <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-4)" }}>10 MB max</span>
+            <input type="file" accept="application/pdf" hidden onChange={e => setPdf(e.target.files?.[0])} />
+          </label>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 11.5, color: "var(--ink-4)" }}>
+          Typical: 6–12 s per company
+        </div>
+        <button type="submit" style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: "var(--accent)", color: "white",
+          border: "1px solid var(--accent)", borderRadius: 6,
+          padding: "8px 16px", fontSize: 13.5, fontWeight: 500, cursor: "pointer",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "var(--accent-hi)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "var(--accent)"; }}>
+          Classify
+          <span className="mono" style={{ fontSize: 10.5, opacity: 0.75, padding: "1px 5px", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 3 }}>⏎</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// Collapsed summary bar shown above results
+function SubmittedBar({ data, onEdit, onRerun }) {
+  const s = data.sources;
+  return (
+    <div style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, padding: "12px 14px",
+      display: "grid", gridTemplateColumns: "minmax(180px, auto) 1fr auto",
+      alignItems: "center", columnGap: 14, rowGap: 10,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, gridColumn: 1 }}>
+        <div style={{
+          width: 26, height: 26, borderRadius: 5,
+          background: "var(--bg-subtle)", border: "1px solid var(--border)",
+          display: "grid", placeItems: "center",
+          fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)",
+          flexShrink: 0,
+        }}>
+          {data.companyName.slice(0, 2).toUpperCase()}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {data.companyName}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--ink-3)" }}>
+            {data.codes.length} code{data.codes.length === 1 ? "" : "s"} · classified just now
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-start", gridColumn: 2, minWidth: 0 }}>
+        <SourceBadge label="Website" status={s.website} icon={IconLink} />
+        <SourceBadge label="PDF" status={s.pdf} icon={IconDoc} />
+        <SourceBadge label="Desc" status={s.description} icon={IconText} />
+        <SourceBadge label="Email" status={s.email} icon={IconMail} />
+      </div>
+
+      <div style={{ display: "flex", gap: 6, gridColumn: 3, flexShrink: 0 }}>
+        <ToolbarButton onClick={onRerun} icon={IconRefresh} label="Re-run" />
+        <ToolbarButton onClick={onEdit} icon={IconPlus} label="New" primary />
+      </div>
+    </div>
+  );
+}
+
+// Truncate overly long error text inside SourceBadge so it doesn't blow out the grid
+const SourceBadgeStyleCap = `
+  .source-badge { max-width: 240px; }
+  .source-badge > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+`;
+if (typeof document !== "undefined" && !document.getElementById("source-badge-cap")) {
+  const el = document.createElement("style");
+  el.id = "source-badge-cap";
+  el.textContent = SourceBadgeStyleCap;
+  document.head.appendChild(el);
+}
+
+function ToolbarButton({ onClick, icon: IconC, label, primary }) {
+  const [h, setH] = useState(false);
+  return (
+    <button onClick={onClick}
+      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: primary ? (h ? "var(--accent-hi)" : "var(--accent)") : h ? "var(--bg-subtle)" : "var(--bg-elev)",
+        color: primary ? "white" : "var(--ink-2)",
+        border: `1px solid ${primary ? "var(--accent)" : "var(--border)"}`,
+        borderRadius: 6, padding: "6px 10px", fontSize: 12.5, cursor: "pointer",
+      }}>
+      <IconC size={12} stroke={1.8} /> {label}
+    </button>
+  );
+}
+
+// ---------- Loading ----------
+
+function LoadingState({ companyName, hasWebsite, hasPdf }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const t0 = Date.now();
+    const id = setInterval(() => setElapsed(Date.now() - t0), 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const stages = [
+    { label: "Fetching inputs",   range: [0, 2000],   desc: hasPdf && hasWebsite ? "Scraping website and extracting PDF text" : hasPdf ? "Extracting PDF text" : hasWebsite ? "Scraping website content" : "Preparing inputs" },
+    { label: "Building prompt",   range: [2000, 3500], desc: "Assembling 580-code FSC list with prompt caching" },
+    { label: "Classifying",       range: [3500, 99999], desc: "Claude Sonnet 4.6 is reading the inputs and selecting matches" },
+  ];
+  const currentIdx = stages.findIndex(s => elapsed < s.range[1]);
+  const seconds = (elapsed / 1000).toFixed(1);
+
+  return (
+    <div className="fade-up" style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, padding: 20,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="spinner" />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
+            Classifying {companyName || "company"}…
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ink-3)" }}>
+            {stages[currentIdx]?.desc}
+          </div>
+        </div>
+        <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{seconds}s</div>
+      </div>
+
+      <div className="shimmer" style={{
+        position: "relative", marginTop: 14, height: 3,
+        background: "var(--bg-subtle)", borderRadius: 2, overflow: "hidden",
+      }} />
+
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        {stages.map((s, i) => {
+          const state = i < currentIdx ? "done" : i === currentIdx ? "active" : "pending";
+          return (
+            <div key={i} style={{
+              flex: 1, padding: "8px 10px", borderRadius: 6,
+              border: "1px solid var(--border)",
+              background: state === "active" ? "var(--accent-bg)" : "var(--bg-subtle)",
+              opacity: state === "pending" ? 0.55 : 1,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {state === "done" ? <IconCheck size={11} stroke={2.4} style={{ color: "var(--ok-fg)" }} />
+                 : state === "active" ? <IconDot size={6} color="var(--accent)" />
+                 : <IconDot size={6} color="var(--ink-4)" />}
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase", color: "var(--ink-3)" }}>
+                  {s.label}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  ConfidencePill, SourceBadge, Sidebar, CompanyForm, SubmittedBar, LoadingState, ToolbarButton,
+});
+
+</script>
+
+<script type="text/babel" data-from="src/results.jsx">
+// Results area: summary card, FSG groups, code cards.
+
+const { useState: useState_r } = React;
+
+function copyText(s) {
+  try { navigator.clipboard?.writeText(s); } catch {}
+}
+
+function CopyBtn({ value, label }) {
+  const [ok, setOk] = useState_r(false);
+  const [hover, setHover] = useState_r(false);
+  return (
+    <button
+      onClick={() => { copyText(value); setOk(true); setTimeout(() => setOk(false), 1200); }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={`Copy ${label}`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 4,
+        background: hover ? "var(--bg-subtle)" : "transparent",
+        border: "1px solid transparent",
+        borderRadius: 4, padding: "2px 5px", cursor: "pointer",
+        color: "var(--ink-3)", fontSize: 11,
+      }}>
+      {ok ? <IconCheck size={11} stroke={2.2} style={{ color: "var(--ok-fg)" }} /> : <IconCopy size={11} stroke={1.8} />}
+    </button>
+  );
+}
+
+function CodeCard({ c, showEvidence }) {
+  const hasEvidence = c.evidence && c.evidence !== "(none)";
+  return (
+    <div style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 8, padding: "12px 14px",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <div className="mono" style={{
+          fontSize: 14, fontWeight: 600, color: "var(--ink)",
+          background: "var(--bg-subtle)", border: "1px solid var(--border)",
+          borderRadius: 5, padding: "3px 8px", flexShrink: 0, letterSpacing: 0.2,
+        }}>
+          {c.code}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink)" }}>
+              {c.description}
+            </div>
+            <ConfidencePill confidence={c.confidence} />
+            <CopyBtn value={c.code} label="code" />
+          </div>
+          <p style={{ fontSize: 13, color: "var(--ink-2)", margin: "6px 0 0", lineHeight: 1.55 }}>
+            {c.reasoning}
+          </p>
+          {showEvidence && hasEvidence && (
+            <blockquote style={{
+              margin: "10px 0 0", padding: "6px 0 6px 12px",
+              borderLeft: "2px solid var(--accent-border)",
+              fontSize: 12.5, fontStyle: "italic", color: "var(--ink-2)",
+              lineHeight: 1.55,
+            }}>
+              “{c.evidence}”
+            </blockquote>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GroupSection({ g, showEvidence }) {
+  const [open, setOpen] = useState_r(true);
+  return (
+    <section>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", gap: 8, width: "100%",
+          background: "transparent", border: "none", padding: "0 0 6px", cursor: "pointer", textAlign: "left",
+        }}>
+        {open ? <IconChevD size={12} stroke={2} style={{ color: "var(--ink-3)" }} />
+              : <IconChevR size={12} stroke={2} style={{ color: "var(--ink-3)" }} />}
+        <span className="mono" style={{
+          fontSize: 11, color: "var(--ink-3)",
+          background: "var(--bg-subtle)", border: "1px solid var(--border)",
+          padding: "1px 6px", borderRadius: 4,
+        }}>FSG {g.group_code}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{g.group_name}</span>
+        <span style={{ fontSize: 11.5, color: "var(--ink-4)" }}>· {g.codes.length}</span>
+      </button>
+      {open && (
+        <div style={{ display: "grid", gap: 6, paddingLeft: 20 }}>
+          {g.codes.map(c => <CodeCard key={c.code} c={c} showEvidence={showEvidence} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+const RANK = { high: 0, medium: 1, low: 2 };
+
+const SORTS = {
+  confidence_group: {
+    label: "Best match",
+    grouped: true,
+    cmp: (a, b) => (RANK[a.confidence] ?? 3) - (RANK[b.confidence] ?? 3) || a.code.localeCompare(b.code),
+  },
+  confidence: {
+    label: "Confidence",
+    grouped: false,
+    cmp: (a, b) => (RANK[a.confidence] ?? 3) - (RANK[b.confidence] ?? 3) || a.code.localeCompare(b.code),
+  },
+  code_asc: {
+    label: "Code ↑",
+    grouped: false,
+    cmp: (a, b) => a.code.localeCompare(b.code),
+  },
+  code_desc: {
+    label: "Code ↓",
+    grouped: false,
+    cmp: (a, b) => b.code.localeCompare(a.code),
+  },
+  group_code: {
+    label: "FSG",
+    grouped: true,
+    cmp: (a, b) => a.code.localeCompare(b.code),
+  },
+  description: {
+    label: "A–Z",
+    grouped: false,
+    cmp: (a, b) => a.description.localeCompare(b.description),
+  },
+};
+
+function groupByFsg(codes, cmp) {
+  const groups = new Map();
+  for (const c of codes) {
+    if (!groups.has(c.group_code)) groups.set(c.group_code, { group_code: c.group_code, group_name: c.group_name, codes: [] });
+    groups.get(c.group_code).codes.push(c);
+  }
+  for (const g of groups.values()) g.codes.sort(cmp);
+  return [...groups.values()].sort((a, b) => {
+    const aBest = Math.min(...a.codes.map(c => RANK[c.confidence] ?? 3));
+    const bBest = Math.min(...b.codes.map(c => RANK[c.confidence] ?? 3));
+    return aBest - bBest || a.group_code.localeCompare(b.group_code);
+  });
+}
+
+function SortBar({ sort, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--ink-4)", marginRight: 2 }}>
+        Sort
+      </span>
+      {Object.entries(SORTS).map(([k, o]) => {
+        const active = sort === k;
+        return (
+          <button key={k} onClick={() => onChange(k)}
+            style={{
+              fontSize: 11.5, padding: "3px 8px", borderRadius: 5, cursor: "pointer",
+              background: active ? "var(--accent-bg)" : "transparent",
+              color: active ? "var(--accent-hi)" : "var(--ink-3)",
+              border: `1px solid ${active ? "var(--accent-border)" : "var(--border)"}`,
+            }}>
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AnalysisCard({ data }) {
+  return (
+    <div style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, padding: 18,
+    }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--ink-4)", marginBottom: 6 }}>
+        Analysis
+      </div>
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "var(--ink)", textWrap: "pretty" }}>
+        {data.analysis}
+      </p>
+      {data.sources.email.derivedUrl && (
+        <div style={{ fontSize: 11.5, color: "var(--ink-4)", marginTop: 8 }}>
+          Derived URL from email: <span className="mono" style={{ color: "var(--ink-3)" }}>{data.sources.email.derivedUrl}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultsStats({ codes }) {
+  const hi = codes.filter(c => c.confidence === "high").length;
+  const md = codes.filter(c => c.confidence === "medium").length;
+  const lo = codes.filter(c => c.confidence === "low").length;
+  const groups = new Set(codes.map(c => c.group_code)).size;
+  const Stat = ({ label, value, color }) => (
+    <div style={{
+      flex: 1, padding: "10px 14px", borderRight: "1px solid var(--border)",
+      display: "flex", flexDirection: "column", gap: 2,
+    }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--ink-4)" }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+        <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: color || "var(--ink)" }}>{value}</div>
+      </div>
+    </div>
+  );
+  return (
+    <div style={{
+      background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, display: "flex", overflow: "hidden",
+    }}>
+      <Stat label="Total" value={codes.length} />
+      <Stat label="High" value={hi} color="var(--ok-fg)" />
+      <Stat label="Medium" value={md} color="var(--warn-fg)" />
+      <Stat label="Low" value={lo} color="var(--err-fg)" />
+      <div style={{ borderRight: "none", flex: 1, padding: "10px 14px" }}>
+        <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--ink-4)" }}>Groups</div>
+        <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{groups}</div>
+      </div>
+    </div>
+  );
+}
+
+function Results({ data, showEvidence }) {
+  const [sort, setSort] = useState_r("confidence_group");
+  const sortDef = SORTS[sort];
+
+  if (data.codes.length === 0 && data.errorBanner) {
+    return (
+      <div className="fade-up" style={{ display: "grid", gap: 12 }}>
+        <AnalysisCard data={data} />
+        <div style={{
+          background: "var(--warn-bg)", border: "1px solid var(--warn-border)",
+          color: "var(--warn-fg)", borderRadius: 10, padding: 14,
+          display: "flex", alignItems: "flex-start", gap: 10,
+        }}>
+          <IconWarn size={16} stroke={1.8} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>Classification could not proceed</div>
+            <div style={{ fontSize: 12.5, marginTop: 3, color: "var(--ink-2)" }}>{data.errorBanner}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.codes.length === 0) {
+    return (
+      <div className="fade-up" style={{ display: "grid", gap: 12 }}>
+        <AnalysisCard data={data} />
+        <div style={{
+          background: "var(--bg-elev)", border: "1px solid var(--border)",
+          borderRadius: 10, padding: "28px 20px", textAlign: "center",
+        }}>
+          <div style={{ display: "inline-flex", width: 40, height: 40, alignItems: "center", justifyContent: "center",
+            borderRadius: 999, background: "var(--bg-subtle)", border: "1px solid var(--border)", color: "var(--ink-4)", marginBottom: 10 }}>
+            <IconEmpty size={18} stroke={1.6} />
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>No FSC codes matched</div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-3)", marginTop: 4, maxWidth: 420, margin: "4px auto 0" }}>
+            The classifier had insufficient evidence to select any 4-digit code. Adding a website, description, or capability PDF usually helps.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const grouped = sortDef.grouped;
+  const groups = grouped ? groupByFsg(data.codes, sortDef.cmp) : null;
+  const flat = grouped ? null : [...data.codes].sort(sortDef.cmp);
+
+  return (
+    <div className="fade-up" style={{ display: "grid", gap: 14 }}>
+      <AnalysisCard data={data} />
+      <ResultsStats codes={data.codes} />
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 2px", gap: 10, flexWrap: "wrap",
+      }}>
+        <SortBar sort={sort} onChange={setSort} />
+        <button
+          onClick={() => {
+            const rows = ["code,description,group,confidence,reasoning"];
+            const out = grouped ? data.codes : flat;
+            for (const c of out) rows.push([c.code, c.description, c.group_name, c.confidence, c.reasoning.replace(/"/g, '""')].map(v => `"${v}"`).join(","));
+            copyText(rows.join("\n"));
+          }}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: "transparent", border: "1px solid var(--border)",
+            borderRadius: 6, padding: "4px 9px", fontSize: 12, cursor: "pointer",
+            color: "var(--ink-2)",
+          }}>
+          <IconDown size={11} stroke={1.8} /> Copy as CSV
+        </button>
+      </div>
+      {grouped ? (
+        <div style={{ display: "grid", gap: 14 }}>
+          {groups.map(g => <GroupSection key={g.group_code} g={g} showEvidence={showEvidence} />)}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 6 }}>
+          {flat.map(c => <CodeCard key={c.code} c={c} showEvidence={showEvidence} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { Results });
+
+</script>
+
+<script type="text/babel" data-from="src/app.jsx">
+// Root app: orchestrates state, Tweaks, keyboard shortcuts.
+
+const { useState: useS, useEffect: useE, useRef: useR } = React;
+
+const STATE_FIXTURES = {
+  happy: window.fx_happy,
+  sparse: window.fx_sparse,
+  error: window.fx_error,
+  empty_codes: window.fx_empty_codes,
+};
+
+function useTweaks() {
+  const d = window.TWEAK_DEFAULTS || { showEvidence: true, previewState: "empty" };
+  const [tweaks, setTweaks] = useS(d);
+  const [visible, setVisible] = useS(false);
+  useE(() => {
+    function onMsg(e) {
+      if (e.data?.type === "__activate_edit_mode") setVisible(true);
+      else if (e.data?.type === "__deactivate_edit_mode") setVisible(false);
+    }
+    window.addEventListener("message", onMsg);
+    window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+  function set(edits) {
+    setTweaks(t => ({ ...t, ...edits }));
+    window.parent.postMessage({ type: "__edit_mode_set_keys", edits }, "*");
+  }
+  return { tweaks, set, visible };
+}
+
+function TweaksPanel({ tweaks, set, state, setState, theme, onThemeToggle }) {
+  return (
+    <div style={{
+      position: "fixed", right: 14, bottom: 14, zIndex: 100,
+      width: 240, background: "var(--bg-elev)", border: "1px solid var(--border)",
+      borderRadius: 10, padding: 12, fontSize: 12.5,
+      boxShadow: "0 10px 30px -10px oklch(0 0 0 / 0.15)",
+      color: "var(--ink)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ fontWeight: 600, color: "var(--ink)" }}>Tweaks</div>
+        <span className="mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>demo</span>
+      </div>
+
+      <div style={{ display: "grid", gap: 10 }}>
+        <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ color: "var(--ink-2)" }}>Show evidence quotes</span>
+          <input type="checkbox" checked={!!tweaks.showEvidence}
+            onChange={e => set({ showEvidence: e.target.checked })} />
+        </label>
+
+        <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ color: "var(--ink-2)" }}>Dark mode</span>
+          <input type="checkbox" checked={theme === "dark"} onChange={onThemeToggle} />
+        </label>
+
+        <div>
+          <div style={{ color: "var(--ink-4)", fontSize: 10.5, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>
+            Preview state
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+            {[
+              { k: "empty",       l: "Empty form" },
+              { k: "loading",     l: "Loading" },
+              { k: "happy",       l: "Happy" },
+              { k: "sparse",      l: "Sparse" },
+              { k: "empty_codes", l: "No codes" },
+              { k: "error",       l: "Error" },
+            ].map(o => (
+              <button key={o.k}
+                onClick={() => { setState(o.k); set({ previewState: o.k }); }}
+                style={{
+                  textAlign: "left", padding: "5px 8px", fontSize: 12,
+                  background: state === o.k ? "var(--accent-bg)" : "var(--bg-subtle)",
+                  color: state === o.k ? "var(--accent-hi)" : "var(--ink-2)",
+                  border: `1px solid ${state === o.k ? "var(--accent-border)" : "var(--border)"}`,
+                  borderRadius: 5, cursor: "pointer",
+                }}>
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const { tweaks, set, visible } = useTweaks();
+  const [state, setState] = useS(tweaks.previewState || "empty");
+  const [selectedHistory, setSelectedHistory] = useS(null);
+  const [theme, setThemeLocal] = useS(tweaks.theme || "light");
+  const nameRef = useR(null);
+
+  useE(() => { if (tweaks.previewState && tweaks.previewState !== state) setState(tweaks.previewState); }, [tweaks.previewState]);
+  useE(() => { if (tweaks.theme && tweaks.theme !== theme) setThemeLocal(tweaks.theme); }, [tweaks.theme]);
+  useE(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setThemeLocal(next);
+    set({ theme: next });
+  }
+
+  // ⌘K to focus new-classification input
+  useE(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setState("empty");
+        setTimeout(() => nameRef.current?.focus(), 20);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function handleSubmit(_input) {
+    setState("loading");
+    setTimeout(() => setState("happy"), 2200);
+  }
+
+  function handleHistoryClick(h) {
+    setSelectedHistory(h.id);
+    setState(h.result);
+  }
+
+  function handleNew() {
+    setSelectedHistory(null);
+    setState("empty");
+    setTimeout(() => nameRef.current?.focus(), 20);
+  }
+
+  const data = STATE_FIXTURES[state];
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      <Sidebar current={selectedHistory} onSelect={handleHistoryClick} onNew={handleNew} theme={theme} onThemeToggle={toggleTheme} />
+
+      <main style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          maxWidth: 880, margin: "0 auto", padding: "28px 32px 80px",
+        }}>
+          <MainHeader state={state} />
+
+          {state === "empty" && (
+            <CompanyForm onSubmit={handleSubmit} nameInputRef={nameRef} />
+          )}
+
+          {state === "loading" && (
+            <div style={{ display: "grid", gap: 14 }}>
+              <SubmittedBar data={window.fx_happy} onEdit={handleNew} onRerun={() => {}} />
+              <LoadingState companyName="Loos & Co., Inc." hasWebsite={true} hasPdf={false} />
+            </div>
+          )}
+
+          {data && state !== "empty" && state !== "loading" && (
+            <div style={{ display: "grid", gap: 14 }}>
+              <SubmittedBar data={data} onEdit={handleNew} onRerun={() => { setState("loading"); setTimeout(() => setState(state), 2000); }} />
+              <Results data={data} showEvidence={tweaks.showEvidence} />
+            </div>
+          )}
+        </div>
+      </main>
+
+      {visible && <TweaksPanel tweaks={tweaks} set={set} state={state} setState={setState} theme={theme} onThemeToggle={toggleTheme} />}
+    </div>
+  );
+}
+
+function MainHeader({ state }) {
+  const map = {
+    empty:        { kicker: "New", title: "Classify a company",        sub: "Run a single company against the Federal Supply Classification system." },
+    loading:      { kicker: "In progress", title: "Classifying…",      sub: "This typically takes 6–12 seconds per company." },
+    happy:        { kicker: "Result", title: "Classification complete", sub: "Codes are grouped by Federal Supply Group." },
+    sparse:       { kicker: "Result", title: "Low-signal classification", sub: "Few inputs available — treat matches as directional." },
+    error:        { kicker: "Result", title: "Classification failed",   sub: "The classifier could not gather enough evidence." },
+    empty_codes:  { kicker: "Result", title: "No matches found",        sub: "The company's public materials don't clearly map to any FSC code." },
+  };
+  const m = map[state] || map.empty;
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--ink-4)" }}>
+        {m.kicker}
+      </div>
+      <h1 style={{ margin: "3px 0 3px", fontSize: 22, fontWeight: 600, color: "var(--ink)", letterSpacing: -0.3 }}>
+        {m.title}
+      </h1>
+      <div style={{ fontSize: 13, color: "var(--ink-3)" }}>{m.sub}</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+</body>
+</html>
