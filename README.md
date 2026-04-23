@@ -6,9 +6,34 @@ email, capability-statement PDF, and free-text description, the service
 returns a ranked list of 4-digit FSC codes with confidence, reasoning, and
 a verbatim evidence quote for each match.
 
-Built in a single time-boxed session as a take-home for SalesPatriot.
+Built in a 4-hour time-boxed session as a take-home for SalesPatriot, with
+additional time afterward spent on frontend polish (see below).
 
 Live repo: <https://github.com/nickw409/fsc-classifier>
+
+---
+
+## For reviewers
+
+The README is comprehensive; if you're short on time:
+
+- **5 minutes:** skim the Tradeoffs and Validation run sections, then load
+  the app and classify Loos & Co (`https://loosco.com/`).
+- **15 minutes:** add What I'd build next and Measured behavior. Run the
+  offline smoke to replay the six validation cases without an API key:
+  ```bash
+  cd server && SMOKE_OFFLINE=1 npm run smoke
+  ```
+- **30 minutes:** add a live classification against a company of your
+  choice (the 4th test case) plus the scrape sanity tool:
+  ```bash
+  cd server && npm run scrape:check -- https://<url>
+  ```
+
+Three sections are the strongest signal on engineering judgment:
+**Tradeoffs taken**, **Validation run** (especially the FSG 34
+calibration observation and the non-defense edge case), and
+**What I'd build next**.
 
 ---
 
@@ -47,6 +72,18 @@ npm run dev
 ```
 
 Then open <http://localhost:5173>.
+
+### Test data
+
+The three assignment companies (Loos & Co., H&R Parts, LSDP) are encoded
+in the smoke suite — the LSDP capability statement PDF ships in
+`server/fixtures/` for offline replay. For live classification the URL
+for Loos and H&R is entered via the form; for LSDP, drop the capability
+statement PDF directly into the form's upload zone.
+
+Alternative: `npm run dev:bg` (background the server via `setsid` + pidfile;
+`dev:stop` / `dev:restart` / `dev:status` / `dev:log` round out the loop).
+See [server/scripts/dev-bg.sh](server/scripts/dev-bg.sh).
 
 ### Smoke tests
 
@@ -139,15 +176,52 @@ type ClassifyResponse = {
 
 ### Frontend
 
-Single page. React 18 + Tailwind. Form fields for name / URL / email /
-description / PDF. Results render as **FSG-grouped code cards** sorted
-primarily by the group's best-confidence member, secondarily by code
-number inside each group. Confidence pills: emerald / amber / rose. Each
-code shows reasoning plus the verbatim evidence quote in an italic
-blockquote with a slate left border. Source badges up top show what the
-server actually used (emerald = ok, amber = error, slate = empty). A
-spinner with a time-based stage label ("Fetching website…" →
-"Classifying with Claude…") covers latency.
+React 18 + Vite + Tailwind with IBM Plex Sans/Mono. Layout is a fixed
+260 px sidebar (brand, new-classification button, history search, recent
+list, theme toggle) alongside an 880 px main column that swaps between
+form / loading / result / error / no-codes views.
+
+Design system: OKLCH design tokens (`--bg`, `--ink-{1-4}`, `--accent`,
+semantic `--ok/warn/err` triples, `--border-strong`) on `:root` and
+`[data-theme="dark"]`. Tailwind resolves them via CSS variables so every
+color in the app reduces to a token — no raw slate/gray/blue classes
+remain in `web/src/components/`. `useTheme` persists the light/dark
+choice in `localStorage` and flips `data-theme` on `<html>`.
+
+**Form.** URL + email share a row with live validation (regex + HTML5
+`type=url|email`; field turns rose-bordered, inline hint, submit disables
+until clean). PDF dropzone is a dashed-border target that accepts both
+drag-and-drop and click-to-browse, with a selected-file pill showing name
+/ size / X-to-clear. URL field's native bot-block fallback is handled
+server-side, not flagged in the UI. Submit shows "Company name is
+required" only after a submit attempt — not on first render.
+
+**Results.** Analysis card → 5-cell stats strip (Total / High / Medium /
+Low / Groups, mono big-number) → SortBar (six sort keys: best match,
+confidence, code ↑/↓, FSG, A–Z; grouped vs. flat swap by key) → Copy as
+CSV → either grouped `GroupSection` list (collapsible FSG headers with
+mono badge + count) or flat card list. Each `CodeCard` shows the code in
+a mono badge box + description + confidence pill (dot + uppercase label)
++ inline copy button, then reasoning, then a verbatim evidence quote as a
+blockquote with an accent-colored left border.
+
+**Submitted bar.** When a classification completes, a compact summary bar
+sits above the results: monogram tile + company name + codes-count, then
+the four source badges (Website / PDF / Desc / Email with icons), then
+Re-run and "New" action buttons.
+
+**Loading state.** 14 px spinner + "Classifying {company}…" + elapsed
+seconds, shimmer progress bar, and three stage cards (Fetching inputs →
+Building prompt → Classifying) with done/active/pending indicators. The
+server doesn't stream progress — stages are time-based approximations.
+
+**History.** Every completed classification is stored (response + meta)
+in `localStorage` under `fsc.history.v1` (capped at 50). Clicking an
+entry re-opens the cached result instantly with no API call. Search
+filters by company name and URL. Clear-all button in the footer.
+
+**Keyboard.** `⌘K` / `Ctrl-K` (platform-detected label in the sidebar)
+clears state and focuses the name input.
 
 ---
 
@@ -171,6 +245,55 @@ re-processing the 10.5 K-token FSC prefix.
 
 OpenRouter cost per call: ~$0.036 input × ~10% for cached + ~$0.012
 output ≈ **$0.016 per cached call**, $0.048 on a cold call.
+
+---
+
+## Validation run
+
+Beyond the three assignment companies (Loos & Co., H&R Parts, LSDP), I
+ran six additional cases to probe domain discrimination, platform-context
+extraction, and over-classification on non-defense companies:
+
+- **Machining / aerospace:** GS Precision, Acutec Precision Aerospace,
+  W Machine Works (which mentions M230 Cannon / F-35 / Apache by name).
+- **Electronics focus:** Sechan Electronics, Ace Electronics Defense Systems.
+- **Non-defense edge case:** Levain Bakery.
+
+All six passed the rubric qualitatively. Headlines:
+
+- **No over-classification on non-defense.** The bakery returned one
+  tightly-scoped code (8920 Bakery and Cereal Products). No defense codes,
+  no lazy defaults — the failure mode we cared most about did not trigger.
+- **Platform-context extraction works.** W Machine Works correctly
+  surfaced **1005 Guns thru 30 mm** from the M230 Cannon mention and
+  **1420 Guided Missile Components** from the programs list. The classifier
+  reads stated programs, not just surface capabilities.
+- **Domain discrimination is clean.** Sechan and Ace Electronics returned
+  FSG 58/59 electronics codes only — **zero machining codes**, despite
+  being defense contractors with manufacturing operations.
+
+Two calibration observations worth knowing about:
+
+1. **FSG 34 (Metalworking Machinery) service-vs-product conflation.**
+   The codes in FSG 34 describe the *machines themselves* — lathes,
+   milling machines, machining centers as products purchased by the
+   government. Contract machine shops that *use* these machines to
+   fabricate parts should normally classify to the parts they sell
+   (FSG 15/16/28), not FSG 34. The classifier handled this inconsistently
+   across three similar shops: GS Precision returned 3408 at *low*
+   confidence with honest "operates machining centers" reasoning;
+   Acutec and W Machine returned 3408 at *high* with similar evidence
+   shape. Calibration drift, not correctness — all three are defensible
+   against the evidence cited, just not aligned with each other.
+2. **Sparse-scrape name-fallback.** When a target website is JS-rendered
+   and the scrape returns very little content (the Tartine test case
+   returned ~20 chars), the classifier still emits a medium-confidence
+   code inferred from the company name alone. The UI's source badge
+   surfaces the char count, so the reader can spot a thin scrape — but
+   the prompt could plausibly be tightened to downgrade confidence when
+   all inputs combined are below a threshold.
+
+Neither blocks the demo; both are filed in the follow-ups list below.
 
 ---
 
@@ -198,9 +321,11 @@ output ≈ **$0.016 per cached call**, $0.048 on a cold call.
 - **Static prefix cached, not the LLM response.** Prompt caching saves
   ~3–5 s and ~$0.03 on repeat calls. Response caching would hide model
   drift and is forbidden by the spec anyway.
-- **No state.** No database, no session, no result history. Refresh
-  clears the UI. Matches the assignment's "simplest thing that works"
-  directive.
+- **Client-only persistence.** No database. History is in `localStorage`
+  on the browser — good enough for a demo on a single machine, zero
+  deploy/infra overhead. Matches the assignment's "simplest thing that
+  works" directive; server-side persistence is called out in the
+  production-considerations list below.
 - **`description` is a first-class fallback.** When URL and PDF both
   fail (the "Nowhere LLC" case), the description carries the request
   through — the user pastes a sentence, classification still runs.
@@ -237,6 +362,15 @@ output ≈ **$0.016 per cached call**, $0.048 on a cold call.
 - **CI.** Running the offline smoke in GitHub Actions on every PR
   would catch assertion regressions with zero API cost.
 - **Structured provider logging** (instead of `console.log`).
+- **Calibrate FSG 34 in the prompt.** Add an explicit rule that FSG 34
+  codes describe machines as products, so contract machining services
+  should classify to what they *produce* (FSG 15/16/28) rather than the
+  machinery category. Resolves the validation-run inconsistency above.
+- **Downgrade confidence on thin inputs.** When combined scraped +
+  PDF + description chars are below a threshold (say, 200), cap
+  confidence at "low" for all returned codes. Resolves the sparse-scrape
+  fallback where a JS-rendered site yields name-only inference at
+  medium confidence.
 
 ---
 
@@ -247,6 +381,8 @@ output ≈ **$0.016 per cached call**, $0.048 on a cold call.
 ├── data/
 │   ├── AV_FSCClassAssignment._151007.pdf  # assignment source doc
 │   └── fsc_codes.json                     # 580 entries, validated at boot
+├── design-reference.html                  # Claude-generated prototype used
+│                                          #   as the frontend polish target
 ├── server/
 │   ├── src/
 │   │   ├── index.ts      # Express app, route wiring, dotenv bootstrap
@@ -259,6 +395,8 @@ output ≈ **$0.016 per cached call**, $0.048 on a cold call.
 │   │   ├── email.ts      # consumer blocklist + domain → URL
 │   │   └── types.ts
 │   ├── fixtures/         # cached smoke responses (committed)
+│   ├── scripts/
+│   │   └── dev-bg.sh     # background-server control (setsid + pidfile)
 │   └── tests/
 │       ├── parser.test.ts
 │       ├── smoke.ts      # end-to-end, live or offline-replay
@@ -267,11 +405,18 @@ output ≈ **$0.016 per cached call**, $0.048 on a cold call.
     └── src/
         ├── App.tsx
         ├── api.ts
+        ├── index.css     # design tokens (OKLCH) + utilities
         ├── types.ts
+        ├── hooks/
+        │   ├── useTheme.ts     # light/dark, localStorage
+        │   └── useHistory.ts   # classifications history, localStorage
         └── components/
-            ├── CompanyForm.tsx
-            ├── LoadingIndicator.tsx
-            └── ResultsDisplay.tsx
+            ├── Sidebar.tsx         # brand, new, search, history list, footer
+            ├── MainHeader.tsx      # per-state kicker / title / sub
+            ├── CompanyForm.tsx     # form + drag-drop PDF + validation
+            ├── SubmittedBar.tsx    # monogram + source badges + re-run/new
+            ├── LoadingIndicator.tsx # spinner + shimmer + 3-stage cards
+            └── ResultsDisplay.tsx  # analysis, stats, sort, groups, CSV
 ```
 
 ---

@@ -104,16 +104,6 @@ export default function CompanyForm({ onSubmit, disabled }: Props) {
       className="bg-bg-elev border border-border rounded-[10px] p-5 fade-up"
       noValidate
     >
-      {/* Header */}
-      <div className="mb-4">
-        <div className="text-[16px] font-semibold tracking-[-0.2px] text-ink">
-          Classify a company
-        </div>
-        <div className="text-[12.5px] text-ink-3 mt-0.5">
-          Provide a name and any combination of inputs. Results return 4-digit FSC codes with evidence.
-        </div>
-      </div>
-
       <div className="grid gap-[14px]">
         {/* Company name */}
         <div>
