@@ -6,9 +6,6 @@ email, capability-statement PDF, and free-text description, the service
 returns a ranked list of 4-digit FSC codes with confidence, reasoning, and
 a verbatim evidence quote for each match.
 
-Built in a 4-hour time-boxed session as a take-home for SalesPatriot, with
-additional time afterward spent on frontend polish (see below).
-
 Live repo: <https://github.com/nickw409/fsc-classifier>
 
 ---
@@ -292,8 +289,21 @@ Two calibration observations worth knowing about:
    surfaces the char count, so the reader can spot a thin scrape — but
    the prompt could plausibly be tightened to downgrade confidence when
    all inputs combined are below a threshold.
+3. **Rerun variance on borderline codes.** `classify.ts` doesn't set a
+   `temperature` on the OpenRouter request, so Sonnet samples at its
+   default (1.0). Two back-to-back runs on the same company usually
+   produce the same 5–8 core codes but can differ by ±1 on borderline
+   entries: a code whose inclusion probability sits near the model's
+   internal threshold (call it 65 %) shows up on ~65 % of runs and not
+   on the rest. Prompt caching doesn't affect this — the cache is
+   input-side; output generation still samples token-by-token. Leaving
+   it at default has one upside: back-to-back runs are effectively an
+   ensemble and can surface coverage you might otherwise miss. A one-
+   line fix (`temperature: 0`) would tighten this to near-deterministic
+   at the cost of slightly flatter reasoning prose; worth doing if
+   perfect reproducibility becomes more important than coverage.
 
-Neither blocks the demo; both are filed in the follow-ups list below.
+None blocks the demo; all are filed in the follow-ups list below.
 
 ---
 
@@ -371,6 +381,10 @@ Neither blocks the demo; both are filed in the follow-ups list below.
   confidence at "low" for all returned codes. Resolves the sparse-scrape
   fallback where a JS-rendered site yields name-only inference at
   medium confidence.
+- **Pin temperature (or expose it).** Setting `temperature: 0` on the
+  OpenRouter call removes the borderline-code jitter documented in the
+  validation section. Would keep as a config so a "diverse coverage"
+  mode stays available.
 
 ---
 
