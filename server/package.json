@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:bg": "bash scripts/dev-bg.sh start",
+    "dev:stop": "bash scripts/dev-bg.sh stop",
+    "dev:restart": "bash scripts/dev-bg.sh restart",
+    "dev:status": "bash scripts/dev-bg.sh status",
+    "dev:log": "bash scripts/dev-bg.sh log",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx tests/parser.test.ts",
